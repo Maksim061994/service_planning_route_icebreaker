@@ -20,11 +20,19 @@ connector = PostgresConnector(
 
 @nsi_routers.get('/edges')
 async def edges():
+    """
+    Получение списка всех ребер графа (взаимосвязей между портами
+    :return:
+    """
     nsi = Nsi(settings, connector)
     return await nsi.get_edges()
 
 
 @nsi_routers.get('/points')
 async def points():
+    """
+    Получение списка всех точек графа (портов)
+    :return:
+    """
     nsi = Nsi(settings, connector)
     return await nsi.get_points()

@@ -19,15 +19,29 @@ connector = PostgresConnector(
 
 @manage_icebreakers_routers.get('/')
 async def get_list_Icebreakers():
+    """
+    Получение списка всех ледоколов
+    :return:
+    """
     manager = ManagerIcebreakers(settings, connector)
     return await manager.get_icebreakers()
 
 @manage_icebreakers_routers.post('/add')
 async def create_Icebreaker(request: RequestIcebreaker):
+    """
+    Добавление нового ледокола
+    :param request:
+    :return:
+    """
     manager = ManagerIcebreakers(settings, connector)
     return await manager.create_icebreaker(request)
 
 @manage_icebreakers_routers.post('/delete')
 async def delete_Icebreaker(request: RequestDeleteIcebreaker):
+    """
+    Удаление ледокола
+    :param request:
+    :return:
+    """
     manager = ManagerIcebreakers(settings, connector)
     return await manager.delete_icebreaker(order_id=request.icebreaker_id)

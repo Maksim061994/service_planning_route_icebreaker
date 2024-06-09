@@ -12,5 +12,10 @@ settings = get_settings()
 
 @user_access_router.post('/login')
 async def login(request: UserLoginSchema):
+    """
+    Авторизация пользователя
+    :param request:
+    :return:
+    """
     user = UserAccess(settings)
     return await user.login(request)

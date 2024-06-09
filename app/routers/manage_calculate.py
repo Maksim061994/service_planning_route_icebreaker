@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from app.config.settings import get_settings
 from app.workers.tasks import calculate_scheduler_task
 from app.helpers.connector_pgsql import PostgresConnector
-from app.main_celery import celery
+from app.main_celery import app_celery
 from app.handlers.calculate.schemas import RequestCalculate
 
 
@@ -20,11 +20,25 @@ connector = PostgresConnector(
 
 @manage_calculate_routers.post("/task/run")
 async def run_calculate(request: RequestCalculate):
+    """
+    Запуска задачи на расчет маршрутов ледоколов
+    :param request:
+    :return:
+    """
     task = calculate_scheduler_task.delay(request.x, request.y)
     return {"task_id": str(task.id)}
 
 
 @manage_calculate_routers.get("/task/{task_id}")
 async def get_task_status(task_id: str):
-    task = celery.AsyncResult(task_id)
-    return {"task_id": task_id, "status": task.status, "result": task.result if task.successful() else None}
+    """
+    Получение статуса задачи по task_id
+    :param task_id:
+    :return:
+    """
+    task = app_celery.AsyncResult(task_id)
+    return {
+        "task_id": task_id,
+        "status": task.status,
+        "result": task.result if task.successful() else None
+    }

@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from app.main import app  # replace with the actual name of your FastAPI app
+from app.main_app import app  # replace with the actual name of your FastAPI app
 
 
 client = TestClient(app)

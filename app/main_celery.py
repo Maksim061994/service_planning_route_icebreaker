@@ -3,15 +3,16 @@ from app.config.settings import get_settings
 
 settings = get_settings()
 
-celery = Celery(
+app_celery = Celery(
     __name__,
     broker=settings.celery_broker_url,
     backend=settings.celery_backend_url
 )
-
-celery.conf.update(
-    CELERY_IMPORTS=("app.workers.tasks",)
+app_celery.conf.update(
+    imports=("app.workers.tasks",),
+    task_track_started=True,
+    result_persistent=True
 )
 
 if __name__ == "__main__":
-    celery.start()
+    app_celery.start()

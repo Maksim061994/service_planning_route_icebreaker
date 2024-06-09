@@ -53,6 +53,49 @@ def generate_test_data_route_orders(lan, lot):
     conn.close()
 
 
+def generate_test_data_route_icebreakers(lan, lot):
+    """
+    Generate test data for table route_icebreakers
+    struct
+        id SERIAL PRIMARY KEY,
+        time INT NOT NULL,
+        grid_coords INT[],
+        geo_coords FLOAT8[],
+        status INT CHECK (status IN (0, 1, 2)),
+        speed FLOAT8,
+        assigned_ships INT[],
+        icebreaker_id INT NOT NULL,
+        FOREIGN KEY (icebreaker_id) REFERENCES icebreakers(id)
+    :return:
+    """
+    test_grid_coords_one_icebreaker = [
+        (58, 77), (58, 76), (59, 75), (60, 74), (61, 73), (61, 72), (61, 71), (61, 70), (61, 69), (61, 68), (61, 67),
+        (61, 66), (62, 65), (63, 64), (64, 63), (65, 62), (66, 61), (67, 60), (68, 59), (69, 58), (70, 57), (71, 56),
+        (71, 61)
+    ]
+    test_coord_grid_one_icebreaker = []
+    for lat, lon in test_grid_coords_one_icebreaker:
+        test_coord_grid_one_icebreaker.append(grid_to_coord(lan, lot, lat, lon))
+    grid_coords = repeat_tuples(test_grid_coords_one_icebreaker, repeat_count=120)
+    geo_coords = repeat_tuples(test_coord_grid_one_icebreaker, repeat_count=120)
+    status = 2
+    speed = 20
+    assigned_ships = [1]
+    icebreakers_id = 1
+
+    conn = PostgresConnector(
+        host="localhost", user="test", password="test", dbname="ship_tracking", port=5432
+    )
+    conn.connect()
+    for i in range(len(grid_coords)):
+        query = f"""
+            INSERT INTO route_icebreakers (time, grid_coords, geo_coords, status, speed, assigned_ships, icebreaker_id)
+            VALUES ({i}, ARRAY{grid_coords[i]}, ARRAY{geo_coords[i]}, {status}, {speed}, ARRAY{assigned_ships}, {icebreakers_id})
+        """
+        conn.execute_query(query)
+    conn.close()
+
 if __name__ == "__main__":
     lan, lot = load_table_lat_lon('data/IntegrVelocity.xlsx')
-    generate_test_data_route_orders(lan, lot)
+    # generate_test_data_route_orders(lan, lot)
+    generate_test_data_route_icebreakers(lan, lot)
