@@ -123,7 +123,7 @@ services:
       - POSTGRES_PASSWORD=$DATABASE_PASSWORD
       - PGDATA=$PGDATA
     ports:
-      - "5446:5432"
+      - "$DATABASE_PORT:5432"
     volumes:
       - /dev/urandom:/dev/random   # Required to get non-blocking entropy source
       - ./pgdata:/var/lib/postgresql/data/pgdata
@@ -183,6 +183,25 @@ services:
     networks:
       ss:
         ipv4_address: 192.168.28.3
+        
+  api_superset:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: api_superset:latest
+    container_name: api_superset
+    entrypoint: bash ./api.sh
+    ports:
+      - 3025:8000
+      - 3026:5555
+    restart: always
+    volumes:
+      - ./app:/opt/app
+      - ./gunicorn.conf.py:/opt/gunicorn.conf.py
+#      - ./.env:/opt/.env
+    networks:
+      ss:
+        ipv4_address: 192.168.28.8
 
 networks:
   ss:
