@@ -201,6 +201,7 @@ services:
     restart: always
     volumes:
       - ./app:/opt/app
+      - ./scripts:/opt/scripts
       - ./gunicorn.conf.py:/opt/gunicorn.conf.py
       - ./.env:/opt/.env
     networks:
