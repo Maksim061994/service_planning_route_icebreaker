@@ -37,10 +37,10 @@ def get_route(
     try:
         path = nx.astar_path(G, start_coords, end_coords)
     except nx.NetworkXNoPath:
-        print(f'nx.NetworkXNoPath, {start_coords=}, {end_coords=}')
+        # print(f'nx.NetworkXNoPath, {start_coords=}, {end_coords=}')
         return None, 0
     except nx.NodeNotFound:
-        print(f'nx.NodeNotFound, {start_coords=}, {end_coords=}')
+        # print(f'nx.NodeNotFound, {start_coords=}, {end_coords=}')
         return None, 0
 
     time_required = sum([get_time(speed_grid, p) for p in path])
