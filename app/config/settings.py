@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import Extra
 import os
 
 
@@ -30,6 +31,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env" if not ENV_API else f".env.{ENV_API}"
+        extra = Extra.ignore
 
 
 def get_settings():
