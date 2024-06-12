@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 def coord_to_grid(
@@ -31,7 +31,7 @@ def grid_to_coord(
 
 def search_coord(
         speed_grid: pd.DataFrame, lat: pd.DataFrame, lon: pd.DataFrame, d_points: dict, point_id: int
-) -> Tuple[int, int]:
+) -> Optional[Tuple[int, int]]:
     grid = None
     for i in np.arange(0.1, 1, 0.1):
         grid = coord_to_grid(
@@ -41,14 +41,12 @@ def search_coord(
         )
         if grid is not None:
             break
-    if grid is None:
-        return
-    if speed_grid.iloc[grid[0], grid[1]] > 0:
+    if (grid is None) or (speed_grid.iloc[grid[0], grid[1]] > 0):
         return grid
     indices = np.where(speed_grid > 0)
     distances = np.sqrt((indices[0] - grid[0]) ** 2 + (indices[1] - grid[1]) ** 2)
     nearest_index = np.argmin(distances)
-    x, y = indices[0][nearest_index], indices[1][nearest_index]
+    x, y = int(indices[0][nearest_index]), int(indices[1][nearest_index])
     return x, y
 
 
