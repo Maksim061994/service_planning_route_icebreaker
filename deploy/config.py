@@ -188,7 +188,7 @@ SECRET_KEY = os.environ.get("SUPERSET_SECRET_KEY") or CHANGE_ME_SECRET_KEY
 #)
 
 # SQLALCHEMY_DATABASE_URI = 'mysql://myapp@localhost/myapp'
-SQLALCHEMY_DATABASE_URI = 'postgresql://ss:ZkJgf68GdPUedVz@msk3tis13.vniizht.lan:5446/superset'
+SQLALCHEMY_DATABASE_URI = 'postgresql://ss:ZkJgf68GdPUedVz@192.168.29.3:9103/superset'
 
 # In order to hook up a custom password store for all SQLALCHEMY connections
 # implement a function that takes a single argument of type 'sqla.engine.url',
@@ -278,7 +278,7 @@ AUTH_RATE_LIMITED = True
 AUTH_RATE_LIMIT = "5 per second"
 # A storage location conforming to the scheme in storage-scheme. See the limits
 # library for allowed values: https://limits.readthedocs.io/en/stable/storage.html
-RATELIMIT_STORAGE_URI = "redis://msk3tis12.vniizht.lan:6379/0"
+RATELIMIT_STORAGE_URI = "redis://192.168.29.7:6379/0"
 # A callable that returns the unique identity of the current request.
 #RATELIMIT_REQUEST_IDENTIFIER = 'flask.Request.endpoint'
 
@@ -703,7 +703,7 @@ CACHE_CONFIG = {
     "CACHE_TYPE": 'RedisCache',
     "CACHE_KEY_PREFIX": 'superset_results_objects',  # make sure this string is unique to avoid collisions
     "CACHE_DEFAULT_TIMEOUT": 86400,  # 60 seconds * 60 minutes * 24 hours
-    'CACHE_REDIS_URL': 'redis://msk3tis12.vniizht.lan:6379/0'
+    'CACHE_REDIS_URL': 'redis://192.168.29.7:6379/0'
 }
 
 # Cache for datasource metadata and query results
@@ -712,7 +712,7 @@ DATA_CACHE_CONFIG = {
     "CACHE_TYPE": 'RedisCache',
     "CACHE_KEY_PREFIX": 'superset_results',  # make sure this string is unique to avoid collisions
     "CACHE_DEFAULT_TIMEOUT": 86400,  # 60 seconds * 60 minutes * 24 hours
-    'CACHE_REDIS_URL': 'redis://msk3tis12.vniizht.lan:6379/0'
+    'CACHE_REDIS_URL': 'redis://192.168.29.7:6379/0'
 }
 
 # Cache for dashboard filter state. `CACHE_TYPE` defaults to `SupersetMetastoreCache`
@@ -732,7 +732,7 @@ FILTER_STATE_CACHE_CONFIG = {
     'CACHE_TYPE': 'RedisCache',
     'CACHE_DEFAULT_TIMEOUT': 86400,
     'CACHE_KEY_PREFIX': 'superset_filter_cache',
-    'CACHE_REDIS_URL': 'redis://msk3tis12.vniizht.lan:6379/0'
+    'CACHE_REDIS_URL': 'redis://192.168.29.7:6379/0'
 }
 
 # Cache for explore form data state. `CACHE_TYPE` defaults to `SupersetMetastoreCache`
@@ -752,7 +752,7 @@ EXPLORE_FORM_DATA_CACHE_CONFIG: CacheConfig = {
     'CACHE_TYPE': 'RedisCache',
     'CACHE_DEFAULT_TIMEOUT': 86400,
     'CACHE_KEY_PREFIX': 'superset_form_cache',
-    'CACHE_REDIS_URL': 'redis://msk3tis12.vniizht.lan:6379/0'
+    'CACHE_REDIS_URL': 'redis://192.168.29.7:6379/0'
 }
 
 # store cache keys by datasource UID (via CacheKey) for custom processing/invalidation
@@ -948,15 +948,10 @@ CELERY_BEAT_SCHEDULER_EXPIRES = timedelta(weeks=1)
 # you'll want to use a proper broker as specified here:
 # https://docs.celeryq.dev/en/stable/getting-started/backends-and-brokers/index.html
 
-#    broker_url = "sqla+sqlite:///celerydb.sqlite"
-#    broker_url = "sqla+postgresql://postgres:JD643JcviPvhnRtbf@postgresql:5446/superset"
-#    result_backend = "db+postgresql://ss:ZkJgf68GdPUedVz@msk3tis13.vniizht.lan:5446/superset"
-#    result_backend = "db+sqlite:///celery_results.sqlite"
-
 class CeleryConfig:
-    broker_url = "redis://msk3tis12.vniizht.lan:6379/1"
+    broker_url = "redis://192.168.29.7:6379/1"
     imports = ("superset.sql_lab", "superset.tasks.scheduler")
-    result_backend = "redis://msk3tis12.vniizht.lan:6379/1"
+    result_backend = "redis://192.168.29.7:6379/1"
     worker_prefetch_multiplier = 4
     task_acks_late = False
     task_annotations = {
@@ -1512,7 +1507,7 @@ SESSION_SERVER_SIDE = False
 #SESSION_SERVER_SIDE = True
 #SESSION_USE_SIGNER = True
 #SESSION_TYPE = "redis"
-#SESSION_REDIS = Redis(host="msk3tis12.vniizht.lan", port=6379, db=0)
+#SESSION_REDIS = Redis(host="192.168.29.7", port=6379, db=0)
 #
 # Other possible config options and backends:
 # # https://flask-session.readthedocs.io/en/latest/config.html
@@ -1564,7 +1559,7 @@ GLOBAL_ASYNC_QUERY_MANAGER_CLASS = (
 )
 GLOBAL_ASYNC_QUERIES_REDIS_CONFIG = {
     "port": 6379,
-    "host": "msk3tis12.vniizht.lan",
+    "host": "192.168.29.7",
     "password": "",
     "db": "0",
     "ssl": False,

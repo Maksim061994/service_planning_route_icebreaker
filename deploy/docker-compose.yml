@@ -2,19 +2,19 @@ version: "3.7"
 
 services:
 
-  ui_superset:
-    image: superset_3.1.2:v2
+  ui_ss:
+    image: superset_3.1.2:v4
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ui_superset
+    container_name: ui_ss
     env_file: .env
     restart: unless-stopped
     hostname: superset
     environment:
       - TZ=Europe/Moscow
     ports:
-      - 8088:8088
+      - 9100:8088
     volumes:
       - ./config.py:/app/superset/config.py
     healthcheck:
@@ -23,14 +23,15 @@ services:
       timeout: 10s
       retries: 5
     depends_on:
-      - ui_superset_redict
+      - ui_ss_redict
+      - db_ss
     networks:
-      ss:
-        ipv4_address: 192.168.28.2
+      st:
+        ipv4_address: 192.168.29.2
 
-  ui_superset_celery:
-    image: superset_3.1.2:v2
-    container_name: ui_superset_celery
+  ui_ss_celery:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_celery
     env_file: .env
     restart: unless-stopped
     environment:
@@ -44,15 +45,16 @@ services:
       timeout: 10s
       retries: 5
     depends_on:
-      - ui_superset_redict
-      - ui_superset
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
     networks:
-      ss:
-        ipv4_address: 192.168.28.4
+      st:
+        ipv4_address: 192.168.29.4
 
-  ui_superset_beat:
-    image: superset_3.1.2:v2
-    container_name: ui_superset_beat
+  ui_ss_beat:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_beat
     env_file: .env
     restart: unless-stopped
     environment:
@@ -61,59 +63,60 @@ services:
       - ./config.py:/app/superset/config.py
     command: celery -A superset.tasks.celery_app:app beat --pidfile= -f /tmp/celery_beat.log -s /tmp/celerybeat-schedule
     depends_on:
-      - ui_superset_redict
-      - ui_superset
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
     healthcheck:
       disable: true
     networks:
-      ss:
-        ipv4_address: 192.168.28.5
+      st:
+        ipv4_address: 192.168.29.5
 
-  ui_superset_flower:
-    image: superset_3.1.2:v2
-    container_name: ui_superset_flower
+  ui_ss_flower:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_flower
     env_file: .env
     restart: unless-stopped
     environment:
       - TZ=Europe/Moscow
     ports:
-      - 5555:5555
+      - 9101:5555
     volumes:
       - ./config.py:/app/superset/config.py
     command: celery -A superset.tasks.celery_app:app flower
     depends_on:
-      - ui_superset_redict
-      - ui_superset
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5555"]
       interval: 10s
       timeout: 10s
       retries: 5
     networks:
-      ss:
-        ipv4_address: 192.168.28.6
+      st:
+        ipv4_address: 192.168.29.6
         
-  ui_superset_redict:
+  ui_ss_redict:
     image: registry.redict.io/redict:7.3.0-alpine3.19
-    container_name: ui_superset_redict
+    container_name: ui_ss_redict
     restart: unless-stopped
     hostname: redict
-    ports:
-      - 6379:6379
-    volumes:
-      - ./redict.conf:/redict.conf
+#    ports:
+#      - 9102:6379
     healthcheck:
       test: ["CMD", "redict-cli", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50
     networks:
-      ss:
-        ipv4_address: 192.168.28.7
+      st:
+        ipv4_address: 192.168.29.7
 
-  db_superset:
-    image: postgres:15.7-alpine3.19
-    container_name: db_superset
+  db_ss:
+    image: postgres:15.5
+    container_name: db_ss
+    hostname: postgres
     shm_size: '2gb'
     restart: always
     env_file: .env
@@ -123,13 +126,13 @@ services:
       - POSTGRES_PASSWORD=$DATABASE_PASSWORD
       - PGDATA=$PGDATA
     ports:
-      - "$DATABASE_PORT:5432"
+      - "$DATABASE_PORT:$DATABASE_PORT"
     volumes:
       - /dev/urandom:/dev/random   # Required to get non-blocking entropy source
       - ./pgdata:/var/lib/postgresql/data/pgdata
-#      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     command: >
      postgres
+       -c port=9103
        -c max_connections=500
        -c superuser_reserved_connections=3
        -c shared_buffers=4GB
@@ -168,6 +171,7 @@ services:
        -c max_parallel_maintenance_workers=4
        -c max_parallel_workers=8
        -c parallel_leader_participation=on
+       -c password_encryption=md5
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "ss"]
       interval: 5s
@@ -181,31 +185,31 @@ services:
         limits:
           cpus: '4'
     networks:
-      ss:
-        ipv4_address: 192.168.28.3
+      st:
+        ipv4_address: 192.168.29.3
         
-  api_superset:
+  api_ss:
     build:
       context: .
       dockerfile: Dockerfile.api
     image: api_superset:latest
-    container_name: api_superset
+    container_name: api_ss
     entrypoint: bash ./api.sh
     ports:
-      - 3025:8000
-      - 3026:5555
+      - 9104:8000
+      - 9105:5555
     restart: always
     volumes:
       - ./app:/opt/app
       - ./gunicorn.conf.py:/opt/gunicorn.conf.py
-#      - ./.env:/opt/.env
+      - ./.env:/opt/.env
     networks:
-      ss:
-        ipv4_address: 192.168.28.8
+      st:
+        ipv4_address: 192.168.29.8
 
 networks:
-  ss:
+  st:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.28.0/24
+        - subnet: 192.168.29.0/24
