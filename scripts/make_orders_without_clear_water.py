@@ -8,20 +8,22 @@ from app.helpers.transform_coord_to_grid import search_coord
 from app.helpers.connector_pgsql import PostgresConnector
 from app.helpers.find_route import get_route
 from app.helpers.speed_map import compute_speed_by_date_for_ship
-from scripts.load_data_from_local_file import load_table_lat_lon, get_dates_from_xls
+from scripts.load_data_from_local_file import load_table_lat_lon
 
 
 def search_new_point(time_grid_without_icebreaker: pd.DataFrame, coords_point_edges: dict, path: list):
     start_index_point = 0
+    time_add = 0
     while start_index_point < len(path) - 2:
         start_point_id = path[start_index_point]
         end_point_id = path[start_index_point + 1]
         start_coords, end_coords = coords_point_edges[(start_point_id, end_point_id)]
         route, time_required = get_route(time_grid_without_icebreaker, start_coords=start_coords, end_coords=end_coords)
         if route is None:
-            return start_index_point
+            return start_index_point, time_add
         start_index_point += 1
-    return start_index_point + 1
+        time_add += time_required
+    return start_index_point + 1, time_add
 
 
 def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_points, d_name_points) -> Tuple:
@@ -70,11 +72,14 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
             print("nx.NodeNotFound", order["id"])
             continue
 
-        index_start_new_point = search_new_point(time_grid_without_icebreaker, coords_point_edges, path)
+        index_start_new_point, time_add = search_new_point(time_grid_without_icebreaker, coords_point_edges, path)
         start_point_id = path[index_start_new_point]
+        if time_add > 0:
+            print(time_add)
+        send_hours += time_add
 
         reverse_path = path[::-1]
-        index_end_new_point = search_new_point(time_grid_without_icebreaker, coords_point_edges, reverse_path)
+        index_end_new_point, time_minus = search_new_point(time_grid_without_icebreaker, coords_point_edges, reverse_path)
         end_point_id = reverse_path[index_end_new_point]
         index_end_point_id = path.index(end_point_id)
 
@@ -85,6 +90,8 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
         paths_orders.append(
             {
                 "order_id": order["id"],
+                "time_add": time_add,
+                "time_minus": time_minus,
                 "with_icebreaker": path,
                 "start_point_id": start_point_id,
                 "end_point_id": end_point_id,
@@ -94,18 +101,8 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
         )
     return result, paths_orders
 
+
 async def main():
-    # with open('data/full_orders.pickle', 'rb') as f:
-    #     full_orders = pickle.load(f)
-    #
-    # with open('data/full_graph.pickle', 'rb') as f:
-    #     full_graph = pickle.load(f)
-    #
-    # with open('data/paths_orders.pickle', 'rb') as f:
-    #     paths_orders_old = pickle.load(f)
-    #
-    # with open('data/clean_orders.pickle', 'rb') as f:
-    #     clean_orders_old = pickle.load(f)
 
     path_excel = 'data/IntegrVelocity.xlsx'
     excel, lat, lon = load_table_lat_lon(path_excel, return_excel=True)

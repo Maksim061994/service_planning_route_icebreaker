@@ -23,10 +23,10 @@ def test_orders_with_authorization():
     response = client.post("/orders/add", headers=headers, json={
         "name_ship": "Test",
         "class_ship": "Test Class",
-        "point_start": "Test Start",
-        "point_end": "Test End",
+        "point_start": "Архангельск",
+        "point_end": "Лаптевых - 4 (юг)",
         "speed": 10,
-        "date_start_swim": "2022-01-01"
+        "date_start_swim": "2023-01-01"
     })  # replace with the actual endpoint and request body
     assert response.status_code == 200
     assert "order_id" in response.json()
