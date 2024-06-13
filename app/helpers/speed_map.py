@@ -53,7 +53,7 @@ def calc_speed_Arc7(speed, icebreaker=False):
         speed_2 = 0.15 * speed
     else:
         speed_0 = speed
-        speed_1 = speed
+        speed_1 = 0.6 * speed
         speed_2 = -10
     return speed_0, speed_1, speed_2
 
