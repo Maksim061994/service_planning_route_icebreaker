@@ -1,0 +1,216 @@
+version: "3.7"
+
+services:
+
+  ui_ss:
+    image: superset_3.1.2:v4
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ui_ss
+    env_file: .env
+    restart: unless-stopped
+    hostname: superset
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - 9100:8088
+    volumes:
+      - ./config.py:/app/superset/config.py
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8088"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - ui_ss_redict
+      - db_ss
+    networks:
+      st:
+        ipv4_address: 192.168.29.2
+
+  ui_ss_celery:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_celery
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - ./config.py:/app/superset/config.py
+    command: celery -A superset.tasks.celery_app:app worker -E --pool=prefork -O fair -c 4 -l INFO
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A superset.tasks.celery_app:app inspect ping -d celery@$$HOSTNAME"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
+    networks:
+      st:
+        ipv4_address: 192.168.29.4
+
+  ui_ss_beat:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_beat
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - ./config.py:/app/superset/config.py
+    command: celery -A superset.tasks.celery_app:app beat --pidfile= -f /tmp/celery_beat.log -s /tmp/celerybeat-schedule
+    depends_on:
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
+    healthcheck:
+      disable: true
+    networks:
+      st:
+        ipv4_address: 192.168.29.5
+
+  ui_ss_flower:
+    image: superset_3.1.2:v4
+    container_name: ui_ss_flower
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Moscow
+    ports:
+      - 9101:5555
+    volumes:
+      - ./config.py:/app/superset/config.py
+    command: celery -A superset.tasks.celery_app:app flower
+    depends_on:
+      - ui_ss_redict
+      - db_ss
+      - ui_ss
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      st:
+        ipv4_address: 192.168.29.6
+        
+  ui_ss_redict:
+    image: registry.redict.io/redict:7.3.0-alpine3.19
+    container_name: ui_ss_redict
+    restart: unless-stopped
+    hostname: redict
+#    ports:
+#      - 9102:6379
+    healthcheck:
+      test: ["CMD", "redict-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    networks:
+      st:
+        ipv4_address: 192.168.29.7
+
+  db_ss:
+    image: postgres:15.5
+    container_name: db_ss
+    hostname: postgres
+    shm_size: '2gb'
+    restart: always
+    env_file: .env
+    environment:
+      - POSTGRES_DB=$DATABASE_DB
+      - POSTGRES_USER=$DATABASE_USER
+      - POSTGRES_PASSWORD=$DATABASE_PASSWORD
+      - PGDATA=$PGDATA
+    ports:
+      - "$DATABASE_PORT:$DATABASE_PORT"
+    volumes:
+      - /dev/urandom:/dev/random   # Required to get non-blocking entropy source
+      - ./pgdata:/var/lib/postgresql/data/pgdata
+    command: >
+     postgres
+       -c port=9103
+       -c max_connections=500
+       -c superuser_reserved_connections=3
+       -c shared_buffers=4GB
+       -c work_mem=32MB
+       -c maintenance_work_mem=320MB
+       -c huge_pages=off
+       -c random_page_cost=1.25
+       -c effective_cache_size=11GB
+       -c effective_io_concurrency=100
+       -c log_destination=stderr
+       -c logging_collector=on
+       -c log_filename='postgresql-%G-%m.log'
+       -c log_truncate_on_rotation=off
+       -c log_rotation_age=10d
+       -c client_min_messages=warning
+       -c log_min_messages=warning
+       -c log_min_error_statement=error
+       -c log_line_prefix='%t %u@%r:%d [%p] '
+       -c log_min_duration_statement=200ms
+       -c log_timezone='Europe/Moscow'
+       -c temp_file_limit=10GB
+       -c idle_in_transaction_session_timeout=30s
+       -c lock_timeout=0
+       -c statement_timeout=6000s
+       -c shared_preload_libraries=pg_stat_statements
+       -c pg_stat_statements.max=10000
+       -c pg_stat_statements.track=all
+       -c timezone='Europe/Moscow'
+       -c track_counts=on
+       -c autovacuum=on
+       -c track_activities=on
+       -c track_io_timing=on
+       -c track_functions=pl
+       -c max_worker_processes=8
+       -c max_parallel_workers_per_gather=4
+       -c max_parallel_maintenance_workers=4
+       -c max_parallel_workers=8
+       -c parallel_leader_participation=on
+       -c password_encryption=md5
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ss"]
+      interval: 5s
+      retries: 5
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 8s
+        max_attempts: 5
+      resources:
+        limits:
+          cpus: '4'
+    networks:
+      st:
+        ipv4_address: 192.168.29.3
+        
+  api_ss:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: api_superset:latest
+    container_name: api_ss
+    entrypoint: bash ./api.sh
+    ports:
+      - 9104:8000
+      - 9105:5555
+    restart: always
+    volumes:
+      - ./app:/opt/app
+      - ./scripts:/opt/scripts
+      - ./gunicorn.conf.py:/opt/gunicorn.conf.py
+      - ./.env:/opt/.env
+    networks:
+      st:
+        ipv4_address: 192.168.29.8
+
+networks:
+  st:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.29.0/24
