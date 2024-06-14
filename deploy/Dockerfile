@@ -16,5 +16,5 @@ RUN wget -q https://github.com/mozilla/geckodriver/releases/download/v${GECKODRI
     chmod 755 /usr/bin/chromedriver && \
     rm -f chromedriver_linux64.zip && \
     pip install --no-cache --upgrade pip setuptools && \
-    pip install --no-cache --no-deps clickhouse-connect clickhouse-driver clickhouse-sqlalchemy flower==2.0.1 prometheus-client==0.20.0 tornado==6.4.0 lz4 zstandard asynch tzlocal google celery[redis]
+    pip install --no-cache --no-deps clickhouse-connect clickhouse-driver clickhouse-sqlalchemy flower==2.0.1 prometheus-client==0.20.0 tornado==6.4.0 lz4 zstandard asynch tzlocal google celery[redis] leb128 zstd ciso8601
 USER superset
