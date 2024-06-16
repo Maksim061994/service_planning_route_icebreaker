@@ -1,10 +1,11 @@
 import pickle
 import pandas as pd
 from app.helpers.connector_pgsql import PostgresConnector
+from tqdm import tqdm
 
 
 async def main():
-    with open('data/full_graph.pickle', 'rb') as f:
+    with open('data/full_graph_new.pickle', 'rb') as f:
         full_graph = pickle.load(f)
     conn = PostgresConnector(
         host="localhost", user="test", password="test",
@@ -14,7 +15,7 @@ async def main():
     parameter = await conn.get_data_async("select * from parameters where name='date_start'")
     date_start = pd.to_datetime(parameter[0]['value'])
 
-    for k in full_graph:
+    for k in tqdm(full_graph):
         order_id = k[0]
         points_start_id = k[1]
         points_end_id = k[2]

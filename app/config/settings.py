@@ -21,9 +21,11 @@ class Settings(BaseSettings):
     db_name_table_edges: str = "edges"
     db_name_table_orders: str = "orders"
     db_name_table_points: str = "points"
+    db_name_table_parameters: str = "parameters"
     db_name_table_route_orders: str = "route_orders"
     db_name_table_icebreakers: str = "icebreakers"
     db_name_table_route_icebreakers: str = "route_icebreakers"
+    url_flower: str = "http://0.0.0.0:5555"
 
     # celery
     celery_broker_url: str

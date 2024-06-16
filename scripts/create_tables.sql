@@ -76,31 +76,49 @@ alter table points
 alter table points owner to ss;
 
 
-CREATE TABLE route_orders (
-    id SERIAL PRIMARY KEY,
-    time INT NOT NULL,
-    grid_coords INT[],
-    geo_coords FLOAT8[],
-    edge_id INT NOT NULL,
-    status INT CHECK (status IN (0, 1, 2)),
-    speed FLOAT8,
-    assigned_icebreaker INT,
-    order_id INT NOT NULL,
-    FOREIGN KEY (edge_id) REFERENCES edges(id),
-    FOREIGN KEY (order_id) REFERENCES orders(id)
+create table route_orders
+(
+    id                     integer generated always as identity constraint route_orders_id unique,
+    order_id               int constraint orders_id_fk references orders (id),
+    point_start_id         int constraint orders_points_point_id_fk references points (id),
+    point_end_id           int constraint orders_points_point_id_fk_2 references points (id),
+    point_start_id_icebreaker         int constraint orders_points_point_id_fk_3 references points (id),
+    point_end_id_icebreaker           int constraint orders_points_point_id_fk_4 references points (id),
+    date_start_swim               date,
+    full_route                        INT[],
+    part_start_route_clean_water      INT[],
+    part_end_route_clean_water        INT[],
+    time_swim_self                          INT,
+    time_swim_with_icebreaker               INT,
+    time_all_order                          INT,
+    status                                  INT CHECK (status IN (0, 1))
+
 );
 
-CREATE TABLE route_icebreakers (
-    id SERIAL PRIMARY KEY,
-    time INT NOT NULL,
-    grid_coords INT[],
-    geo_coords FLOAT8[],
-    status INT CHECK (status IN (0, 1, 2)),
-    speed FLOAT8,
-    assigned_ships INT[],
-    icebreaker_id INT NOT NULL,
-    FOREIGN KEY (icebreaker_id) REFERENCES icebreakers(id)
+
+create table route_icebreakers
+(
+    id                  integer generated always as identity
+        constraint route_icebreakers_id
+            unique,
+    icebreaker_id       integer          not null
+        references icebreakers (id),
+    action_type         integer
+        constraint route_icebreakers_action_type_check
+            check (action_type = ANY (ARRAY [0, 1])),
+    nested_array_orders numeric[][],
+    points_start_id     integer          not null
+        references points (id),
+    points_end_id       integer          not null
+        references points (id),
+    datetime_start      timestamp        not null,
+    datetime_end        timestamp        not null,
+    duration_hours      double precision not null,
+    order_ids           numeric[]
 );
+
+comment on column route_icebreakers.action_type is 'Статус исполнения заявки (0-плывет за заявкой; 1-плывет с заявкой)';
+
 
 CREATE TABLE parameters
 (
@@ -136,3 +154,27 @@ CREATE TABLE graph_ships
     FOREIGN KEY (points_start_id) REFERENCES points(id),
     FOREIGN KEY (points_end_id) REFERENCES points(id)
 );
+
+create table route_icebreakers_detail
+(
+    id                  integer generated always as identity
+        constraint route_icebreakers_detail_id
+            unique,
+    icebreaker_id       integer          not null
+        references icebreakers (id),
+    action_type         integer
+        constraint route_icebreakers_detail_action_type_check
+            check (action_type = ANY (ARRAY [0, 1])),
+    nested_array_orders numeric[][],
+    points_start_id     integer          not null
+        references points (id),
+    points_end_id       integer          not null
+        references points (id),
+    datetime_work      timestamp        not null,
+    datetime_start      timestamp        not null,
+    datetime_end        timestamp        not null,
+    count_ships      integer          not null
+);
+
+comment on column route_icebreakers_detail.action_type is 'Статус исполнения заявки (0-плывет за заявкой; 1-плывет с заявкой)';
+

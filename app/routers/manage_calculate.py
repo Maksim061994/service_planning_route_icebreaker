@@ -25,7 +25,8 @@ async def run_calculate(request: RequestCalculate):
     :param request:
     :return:
     """
-    task = calculate_scheduler_task.delay(request.x, request.y)
+    params = request.params
+    task = calculate_scheduler_task.delay(params)
     return {"task_id": str(task.id)}
 
 

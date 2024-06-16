@@ -74,8 +74,6 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
 
         index_start_new_point, time_add = search_new_point(time_grid_without_icebreaker, coords_point_edges, path)
         start_point_id = path[index_start_new_point]
-        if time_add > 0:
-            print(time_add)
         send_hours += time_add
 
         reverse_path = path[::-1]
@@ -103,13 +101,6 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
 
 
 async def main():
-
-    with open("data/paths_orders.pickle", "rb") as f:
-        d1 = pickle.load(f)
-
-
-    with open("data/clean_orders.pickle", "rb") as f:
-        d2 = pickle.load(f)
 
     path_excel = 'data/IntegrVelocity.xlsx'
     excel, lat, lon = load_table_lat_lon(path_excel, return_excel=True)

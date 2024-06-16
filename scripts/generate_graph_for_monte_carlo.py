@@ -94,16 +94,13 @@ def info_by_icebreakers(dates_ships_state_ice, dates_start, icebreakers, edges, 
 
 
 async def main():
-    # with open("data/result_dict_ships_new.pickle", "rb") as f:
-    #     d = pickle.load(f)
-
     path_excel = 'data/IntegrVelocity.xlsx'
     excel, lat, lon = load_table_lat_lon(path_excel, return_excel=True)
     dates_real_state_ice, dates_ships_state_ice = get_dates_from_xls(excel)
     dates_start = pd.to_datetime("2022-02-27")  # дата начала отсчета
 
     conn = PostgresConnector(
-        host="msk3tis13.vniizht.lan", user="ss", password="ZkJgf68GdPUedVz", dbname="ship_tracking", port=5446
+        host="localhost", user="test", password="test", dbname="ship_tracking", port=5432
     )
     conn.connect()
     orders = await conn.get_data_async("select * from orders")
@@ -128,11 +125,11 @@ def concat_two_dict():
     with open('data/result_dict_icebreakers_new.pickle', 'rb') as f:
         result_ib = pickle.load(f)
     result_s.update(result_ib)
-    with open('data/result_dict_full.pickle', 'wb') as f:
+    with open('data/full_graph_new.pickle', 'wb') as f:
         pickle.dump(result_s, f)
 
 
 if __name__ == '__main__':
+    import asyncio
+    asyncio.run(main())
     concat_two_dict()
-    # import asyncio
-    # asyncio.run(main())

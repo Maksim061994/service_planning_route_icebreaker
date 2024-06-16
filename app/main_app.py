@@ -13,7 +13,8 @@ from app.routers.manage_calculate import manage_calculate_routers
 
 from app.helpers.verify_token import verify_token
 
-
+from app.config.settings import get_settings
+settings = get_settings()
 
 # setup logger
 gunicorn_error_logger = logging.getLogger("gunicorn.error")
@@ -70,3 +71,39 @@ app.include_router(
     tags=['manage_calculate_routers'],
     dependencies=[Depends(verify_token)]
 )
+
+from fastapi.responses import HTMLResponse
+
+
+@app.get("/task_manager", response_class=HTMLResponse)
+async def read_root():
+    iframe = (f'<body>'
+               f'<iframe src="{settings.url_flower}"></iframe>'
+              f'</body>'
+              f' </html>'
+             )
+    html_content = '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Flower UI</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f0f0f0;
+                margin: 0;
+            }
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+        </style>
+    </head>
+    ''' + iframe
+    return HTMLResponse(content=html_content, status_code=200)

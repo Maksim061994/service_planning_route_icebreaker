@@ -1,5 +1,6 @@
 from typing import Optional
 from fastapi import HTTPException
+from app.workers.tasks import add_order_to_table_task
 
 
 class ManagerOrders:
@@ -23,16 +24,35 @@ class ManagerOrders:
         return result
 
     async def create_order(self, request):
-        query = f"""
-            INSERT INTO {self.settings.db_name_table_orders} (name_ship, class_ship, point_start, point_end, speed, date_start_swim)
-            VALUES ('{request.name_ship}', '{request.class_ship}', '{request.point_start}', '{request.point_end}', {request.speed}, '{request.date_start_swim}')
-        """
+        order_id = request.order_id
+        if order_id is None:
+            query = f"""
+                INSERT INTO {self.settings.db_name_table_orders} (name_ship, class_ship, point_start, point_end, speed, date_start_swim)
+                VALUES ('{request.name_ship}', '{request.class_ship}', '{request.point_start}', '{request.point_end}', {request.speed}, '{request.date_start_swim}')
+                ON CONFLICT (name_ship)
+                DO UPDATE SET
+                    speed = EXCLUDED.speed, 
+                    date_start_swim = EXCLUDED.date_start_swim, 
+                    point_start = EXCLUDED.point_start, 
+                    point_end = EXCLUDED.point_end
+            """
+            try:
+                await self.connector.execute_query_async(query)
+            except Exception as e:
+                raise HTTPException(status_code=404, detail=f"Description err - {e}")
+            order = await self.connector.get_data_async(f"SELECT id FROM {self.settings.db_name_table_orders} WHERE name_ship = '{request.name_ship}'")
+            order_id = order[0]["id"]
+        task = add_order_to_table_task.delay(order_id)
+        return {"status": "ok", "order_id": order_id, "task_id": task.task_id}
+
+
+    async def __check_exits_order(self, request):
+        query = f"SELECT * FROM {self.settings.db_name_table_orders} WHERE name_ship='{request.name_ship}' AND class_ship='{request.class_ship}' AND point_start='{request.point_start}' AND point_end='{request.point_end}' AND date_start_swim='{request.date_start_swim}'"
         try:
-            await self.connector.execute_query_async(query)
+            result = await self.connector.get_data_async(query)
         except Exception as e:
             raise HTTPException(status_code=404, detail=f"Description err - {e}")
-        result = await self.connector.get_data_async(f"SELECT id FROM {self.settings.db_name_table_orders} ORDER BY id DESC LIMIT 1")
-        return {"status": "ok", "order_id": result[0]["id"]}
+        return result
 
     async def delete_order(self, order_id: int):
         query = f"DELETE FROM {self.settings.db_name_table_orders} WHERE id={order_id}"

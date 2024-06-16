@@ -36,3 +36,13 @@ async def points():
     """
     nsi = Nsi(settings, connector)
     return await nsi.get_points()
+
+
+@nsi_routers.get('/parameters')
+async def points():
+    """
+    Получение списка всех точек графа (портов)
+    :return:
+    """
+    nsi = Nsi(settings, connector)
+    return await nsi.get_parameters()

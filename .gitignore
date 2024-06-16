@@ -154,6 +154,7 @@ cython_debug/
 #.idea/
 
 data
+.env
 
 /.idea/.gitignore
 /.idea/dataSources.xml

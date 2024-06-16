@@ -9,6 +9,7 @@ class RequestOrder(BaseModel):
     point_end: str
     speed: float
     date_start_swim: str
+    order_id: int = None
 
     @validator('date_start_swim')
     def validate_date(cls, v):

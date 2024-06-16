@@ -19,6 +19,11 @@ class Nsi:
         return result
 
     async def get_points(self):
-        query = f"SELECT * FROM {self.settings.db_name_table_edges}"
+        query = f"SELECT * FROM {self.settings.db_name_table_points}"
+        result = await self.connector.get_data_async(query)
+        return result
+
+    async def get_parameters(self):
+        query = f"SELECT * FROM {self.settings.db_name_table_parameters}"
         result = await self.connector.get_data_async(query)
         return result

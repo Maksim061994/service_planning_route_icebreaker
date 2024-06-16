@@ -39,7 +39,35 @@ class PostgresConnector:
             cur = self.conn.cursor()
             cur.execute(query)
             self.conn.commit()
-            logger.info("Query executed successfully")
+        except psycopg2.Error as e:
+            logger.error(f"An error occurred while executing the query: {e}")
+            raise e
+
+    def get_data_sync(self, query):
+        if self.conn is None:
+            logger.error("You must connect to the database first")
+            return
+        try:
+            cur = self.conn.cursor()
+            cur.execute(query)
+            self.conn.commit()
+            rows = cur.fetchall()
+            column_names = [desc[0] for desc in cur.description]
+            result = [dict(zip(column_names, row)) for row in rows]
+            return result
+        except psycopg2.Error as e:
+            logger.error(f"An error occurred while executing the query: {e}")
+            raise e
+
+    def get_sync_cursor(self, query):
+        if self.conn is None:
+            logger.error("You must connect to the database first")
+            return
+        try:
+            cur = self.conn.cursor()
+            cur.execute(query)
+            self.conn.commit()
+            return cur
         except psycopg2.Error as e:
             logger.error(f"An error occurred while executing the query: {e}")
             raise e

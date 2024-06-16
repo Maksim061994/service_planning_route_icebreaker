@@ -14,7 +14,7 @@ def make_csv_by_integrety_data_for_pgsql(path_to_excel: str, path_to_csv: str) -
                 date = pd.to_datetime(sheet_name) + pd.to_timedelta("730 D")
                 result.append((i, j, date, lon.iloc[i, j], lat.iloc[i, j], one_week.iloc[i, j]))
 
-    df = pd.DataFrame(result, columns=["row_index", "column_index", "date", "lat", "lon", "value"])
+    df = pd.DataFrame(result, columns=["row_index", "column_index", "date", "lon", "lat", "value"])
     df.to_csv(path_to_csv, sep=";", index=False)
     return df
 
