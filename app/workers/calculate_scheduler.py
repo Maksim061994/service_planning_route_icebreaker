@@ -1,6 +1,7 @@
 from typing import List, Tuple, Dict
 import numpy as np
 import pandas as pd
+import copy
 
 from app.helpers.connector_pgsql import PostgresConnector
 from app.workers.algorithm.monte_carlo import MonteCarlo
@@ -39,6 +40,9 @@ class CalculateScheduler:
 
         order_list = self.__get_clean_orders(params['date_start'], d_orders_rename)
         graph_data, max_G_date = self.__get_graph_data(params['date_start'], d_orders_rename, d_icebreakers_rename)
+        import pickle
+        with open("data/graph_data.pickle", "wb") as f:
+            pickle.dump(graph_data, f)
 
         monte_carlo_alg = MonteCarlo(
             player=self.player,
@@ -64,8 +68,9 @@ class CalculateScheduler:
             start_icebreaker_order_list=start_icebreaker_order_list.copy(),
             start_date=start_date, start_reward=start_reward, max_G_date=max_G_date
         )
-        self.__post_processing(result_list, d_icebreakers_reverse, d_orders_reverse)
-        self.data = result_list
+
+        result_list_new = self.__post_processing(copy.deepcopy(result_list), d_icebreakers_reverse, d_orders_reverse)
+        self.data = result_list_new
         self.dataframe = self.__get_dataframe_with_dt()
         return best_try_reward
 
@@ -99,8 +104,6 @@ class CalculateScheduler:
                 """
             self.connector.execute_query(query)
         self.connector.close()
-
-
 
     def __get_dataframe_with_dt(self):
         df = pd.DataFrame(
@@ -154,11 +157,15 @@ class CalculateScheduler:
             self.connector.execute_query(query)
         self.connector.close()
 
-    def __post_processing(self, result_list, d_icebreakers_reverse, d_orders_reverse):
+    def __post_processing(self, result_list, d_icebreakers_reverse, d_orders_reverse) -> List:
+        new_list = []
         for i in range(len(result_list)):
-            result_list[i][0] = d_icebreakers_reverse[result_list[i][0]]
-            for j in range(len(result_list[i][2])):
-                result_list[i][2][j][3] = d_orders_reverse[result_list[i][2][j][3]]
+            row = copy.deepcopy(result_list[i])
+            row[0] = d_icebreakers_reverse[result_list[i][0]]
+            for j in range(len(row[2])):
+                row[2][j][3] = d_orders_reverse[row[2][j][3]]
+            new_list.append(row)
+        return new_list
 
     def __get_graph_data(self, date_start, d_orders_rename, d_icebreakers_rename) -> Tuple:
         self.connector.connect()
