@@ -40,9 +40,6 @@ class CalculateScheduler:
 
         order_list = self.__get_clean_orders(params['date_start'], d_orders_rename)
         graph_data, max_G_date = self.__get_graph_data(params['date_start'], d_orders_rename, d_icebreakers_rename)
-        import pickle
-        with open("data/graph_data.pickle", "wb") as f:
-            pickle.dump(graph_data, f)
 
         monte_carlo_alg = MonteCarlo(
             player=self.player,
@@ -126,6 +123,52 @@ class CalculateScheduler:
             res_df = res_df.ffill().bfill()
             output_df.append(res_df)
         return pd.concat(output_df).reset_index(drop=True)
+
+    def save_time_work_with_orders(self):
+        if self.data is None:
+            raise ValueError("Data is not computed")
+        route_orders = self.__get_route_orders()
+        route_icebreakers = self.__get_route_icebreakers()
+        self.connector.connect()
+        self.connector.execute_query(
+            "DELETE FROM time_process_orders;"
+        )  # TODO: костыль, который обеспичавет создание нового расписания для каждого нового запуска
+        for order in route_orders:
+            time_work_icebreaker = 0
+            time_wait_icebreaker = 0
+            time_swim_self = order["time_swim_self"]
+            if order["type_route"] == 0:
+                date_start_swim = order["date_start_swim"]
+                use_icebreakers = []
+                for icebreaker in route_icebreakers:
+                    ic_orders = [ic_order[-1] for ic_order in icebreaker["nested_array_orders"]]
+                    if order["order_id"] in ic_orders:
+                        use_icebreakers.append(icebreaker)
+                if len(use_icebreakers) > 0:
+                    if len(use_icebreakers) == 1:
+                        use_icebreaker = use_icebreakers[0]
+                        datetime_start_work_icebreaker = use_icebreaker["datetime_start"]
+                        time_work_icebreaker = use_icebreaker["duration_hours"]
+                        time_wait_icebreaker = (datetime_start_work_icebreaker - pd.to_datetime(
+                            date_start_swim)).total_seconds() / 3600
+                    else:
+                        datetime_start_work_icebreaker = None
+                        for use_icebreaker in use_icebreakers:
+                            if use_icebreaker["points_start_id"] == order["point_start_id_icebreaker"]:
+                                datetime_start_work_icebreaker = use_icebreaker["datetime_start"]
+                                break
+                        if datetime_start_work_icebreaker is None:
+                            datetime_start_work_icebreaker = max(
+                                [use_icebreaker["datetime_start"] for use_icebreaker in use_icebreakers])
+                        time_work_icebreaker = sum([use_icebreaker["duration_hours"] for use_icebreaker in use_icebreakers])
+                        time_wait_icebreaker = (datetime_start_work_icebreaker - pd.to_datetime(
+                            date_start_swim)).total_seconds() / 3600
+            query = f"""
+                INSERT INTO time_process_orders (order_id, time_swim_self, time_swim_with_icebreaker, time_wait_icebreaker)
+                VALUES ({order['order_id']}, {time_swim_self}, {time_work_icebreaker}, {time_wait_icebreaker})
+            """
+            self.connector.execute_query(query)
+        self.connector.close()
 
     def save_results(self):
         """
@@ -251,3 +294,15 @@ class CalculateScheduler:
         d_orders_rename = {orders[i]['id']: i for i in range(len(orders))}
         d_orders_reverse = {i: orders[i]['id'] for i in range(len(orders))}
         return orders, d_orders_rename, d_orders_reverse
+
+    def __get_route_orders(self) -> Tuple:
+        self.connector.connect()
+        route_orders = self.connector.get_data_sync("select * from route_orders")
+        self.connector.close()
+        return route_orders
+
+    def __get_route_icebreakers(self):
+        self.connector.connect()
+        route_orders = self.connector.get_data_sync("select * from route_icebreakers")
+        self.connector.close()
+        return route_orders

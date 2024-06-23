@@ -74,6 +74,7 @@ class AddOrder:
         full_path = None
         new_date_start_swim = date_start_swim.strftime("%Y-%m-%d")
         status = 1
+        type_route = 0
         if len(path) > 0:
             index_start_new_point, time_add = self.__search_new_point(
                 time_grid_without_icebreaker, coords_point_edges, path
@@ -85,6 +86,9 @@ class AddOrder:
             )
             end_point_id = reverse_path[index_end_new_point]
             index_end_point_id = path.index(end_point_id)
+
+            if end_point_id == start_point_id:
+                type_route = 1
 
             path_start_route_clean_water = path[:index_start_new_point]
             path_start_route_clean_water = '{' + ','.join(map(str, path_start_route_clean_water)) + '}'
@@ -101,7 +105,7 @@ class AddOrder:
             order_id, new_date_start_swim, start_point_id, end_point_id, full_path,
             path_start_route_clean_water, path_end_route_clean_water,
             time_swim_self, time_swim_icebreaker, time_all_order,
-            status
+            status, type_route
         )
         if self.__not_exist_order_id_in_ice_map(order_id):
             result_graph = self.__make_data_for_graph(
@@ -240,7 +244,7 @@ class AddOrder:
             self, order_id, date_start_swim, start_point_id, end_point_id, path,
             path_start_route_clean_water, path_end_route_clean_water,
             time_swim_self, time_swim_icebreaker, time_all_order,
-            status
+            status, type_route
     ):
         query = f"""
             UPDATE route_orders
@@ -254,7 +258,8 @@ class AddOrder:
             full_route = '{path}',
             part_start_route_clean_water = '{path_start_route_clean_water}',
             part_end_route_clean_water = '{path_end_route_clean_water}',
-            status = {status}
+            status = {status},
+            type_route = {type_route}
             WHERE order_id = {order_id};
         """
         self.connector.connect()

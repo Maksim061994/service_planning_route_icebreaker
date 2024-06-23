@@ -82,9 +82,10 @@ def make_clean_orders(dates_start, orders, edges, points, excel, lat, lon, d_poi
         index_end_point_id = path.index(end_point_id)
 
         if index_end_point_id > index_start_new_point:
-            result.append([start_point_id, end_point_id, send_hours, order["id"]])
+            result.append(([start_point_id, end_point_id, send_hours, order["id"]], 0))
         else:
             print("index_end_point_id < index_start_new_point", order["id"])
+            result.append(([path[0], path[-1], send_hours, order["id"]], 1))
         paths_orders.append(
             {
                 "order_id": order["id"],
@@ -108,7 +109,6 @@ async def main():
 
     conn = PostgresConnector(
         host="localhost", user="test", password="test",
-        # host="msk3tis13.vniizht.lan", user="ss", password="ZkJgf68GdPUedVz",
         dbname="ship_tracking", port=5432
     )
     conn.connect()

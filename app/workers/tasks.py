@@ -13,6 +13,7 @@ def calculate_scheduler_task(params):
     best_try_reward = calculate.compute_schedule(params)
     calculate.save_results()
     calculate.save_dataframe()
+    calculate.save_time_work_with_orders()
     return -best_try_reward
 
 
