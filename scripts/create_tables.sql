@@ -78,21 +78,37 @@ alter table points owner to ss;
 
 create table route_orders
 (
-    id                     integer generated always as identity constraint route_orders_id unique,
-    order_id               int constraint orders_id_fk references orders (id),
-    point_start_id         int constraint orders_points_point_id_fk references points (id),
-    point_end_id           int constraint orders_points_point_id_fk_2 references points (id),
-    point_start_id_icebreaker         int constraint orders_points_point_id_fk_3 references points (id),
-    point_end_id_icebreaker           int constraint orders_points_point_id_fk_4 references points (id),
-    date_start_swim               date,
-    full_route                        INT[],
-    part_start_route_clean_water      INT[],
-    part_end_route_clean_water        INT[],
-    time_swim_self                          INT,
-    time_swim_with_icebreaker               INT,
-    time_all_order                          INT,
-    status                                  INT CHECK (status IN (0, 1))
-
+    id  integer generated always as identity
+        constraint route_orders_id
+            unique,
+    order_id                     integer
+        constraint orders_id_fk
+            references orders (id),
+    point_start_id               integer
+        constraint orders_points_point_id_fk
+            references points (id),
+    point_end_id                 integer
+        constraint orders_points_point_id_fk_2
+            references points (id),
+    point_start_id_icebreaker    integer
+        constraint orders_points_point_id_fk_3
+            references points (id),
+    point_end_id_icebreaker      integer
+        constraint orders_points_point_id_fk_4
+            references points (id),
+    date_start_swim              date,
+    full_route                   integer[],
+    part_start_route_clean_water integer[],
+    part_end_route_clean_water   integer[],
+    time_swim_self               integer,
+    time_swim_with_icebreaker    integer,
+    time_all_order               integer,
+    status                       integer
+        constraint route_orders_status_check
+            check (status = ANY (ARRAY [0, 1])),
+    type_route                       integer
+        constraint route_orders_type_route_check
+            check (status = ANY (ARRAY [0, 1]))
 );
 
 
@@ -178,3 +194,15 @@ create table route_icebreakers_detail
 
 comment on column route_icebreakers_detail.action_type is 'Статус исполнения заявки (0-плывет за заявкой; 1-плывет с заявкой)';
 
+create table time_process_orders
+(
+    id  integer generated always as identity
+        constraint time_process_orders_id
+            unique,
+    order_id                     integer
+        constraint orders_id_fk
+            references orders (id),
+    time_swim_self               float,
+    time_swim_with_icebreaker    float,
+    time_wait_icebreaker         float
+);
